@@ -1,63 +1,24 @@
-# Study Guide: DevOps Project - Create a Game using Docker and Deploy to AWS
+# Use a Windows Server Core image
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
 
-## Overview
-In this project, you will learn how to create a game using Docker containers and deploy it on AWS. The game we will create is based on the popular game **2048**. This guide will walk you through the steps involved in setting up your environment, creating a Docker image, and deploying it using AWS Elastic Beanstalk.
+# Set the working directory
+WORKDIR C:\nginx
 
-## Project Steps
+# Download and install Nginx
+RUN powershell -Command \
+    Invoke-WebRequest -Uri "http://nginx.org/download/nginx-1.21.6.zip" -OutFile "nginx.zip"; \
+    Expand-Archive nginx.zip -DestinationPath .; \
+    Remove-Item nginx.zip
 
-### 1. **Understanding the Project**
-- **Game Concept**: The game **2048** involves combining tiles with the same numbers to reach the tile with the number 2048. The gameplay is simple yet engaging, making it a great project for learning Docker and AWS deployment.
+# Download the 2048 game
+RUN powershell -Command \
+    Invoke-WebRequest -Uri "https://github.com/gabrielecirulli/zip/archive/refs/heads/master.zip" -OutFile "master.zip"; \
+    Expand-Archive master.zip -DestinationPath .; \
+    Move-Item "zip-master\*" "."; \
+    Remove-Item -Recurse -Force "zip-master", "master.zip"
 
-### 2. **Setting Up Your Environment**
-- **Create Project Folder**: Start by creating a folder named `2048` where you will store your Docker file and other project files.
-- **Open Terminal**: Navigate to your project folder using the terminal.
+# Expose port 80
+EXPOSE 80
 
-### 3. **Creating the Dockerfile**
-- **Base Image**: Use Ubuntu 22.04 as the base image for your Docker container.
-  ```Dockerfile
-  FROM ubuntu:22.04
-  ```
-- **Install Required Packages**: Update the package list and install necessary utilities like `nginx`, `curl`, and `zip`.
-  ```Dockerfile
-  RUN apt-get update && apt-get install -y nginx curl zip
-  ```
-- **Configuration**: Configure `nginx` and set up your game files.
-  ```Dockerfile
-  COPY ./path/to/your/game/files /var/www/html
-  EXPOSE 80
-  CMD ["nginx", "-g", "daemon off;"]
-  ```
-- **Final Dockerfile Example**:
-  ```Dockerfile
-  FROM ubuntu:22.04
-  RUN apt-get update && apt-get install -y nginx curl zip
-  COPY ./path/to/your/game/files /var/www/html
-  EXPOSE 80
-  CMD ["nginx", "-g", "daemon off;"]
-  ```
-  This configuration sets up the web server to host your game on port 80.
-
-### 4. **Building the Docker Image**
-- **Build Command**: Use the following command to build your Docker image.
-  ```bash
-  docker build -t 2048-game .
-  ```
-  This command creates an image named `2048-game` from your Dockerfile located in the current directory.
-
-### 5. **Running the Docker Container**
-- **Run Command**: Execute the following command to run your Docker container.
-  ```bash
-  docker run -d -p 80:80 2048-game
-  ```
-  This command runs your container in detached mode and maps port 80 of the container to port 80 of your host machine.
-
-### 6. **Deploying on AWS Elastic Beanstalk**
-- **Create Elastic Beanstalk Application**: Log in to your AWS console and create a new Elastic Beanstalk application.
-- **Upload Docker File**: Choose the option to upload your Docker file and configure the environment settings.
-- **Environment Creation**: Elastic Beanstalk will automatically provision the necessary infrastructure, including instances and load balancers.
-
-### 7. **Testing Your Application**
-- **Access Your Game**: Once the environment is up and running, you will receive a URL where your game is hosted. Open this URL in your web browser to play the game.
-
-## Conclusion
-Completing this project not only enhances your skills in Docker and AWS but also gives you a tangible product to showcase on your resume or LinkedIn profile. Make sure to document your process and share your results with the community! If you have any questions, feel free to reach out for help.
+# Set the command to run Nginx
+CMD ["C:\\nginx\\nginx-1.21.6\\nginx.exe", "-c", "C:\\nginx\\nginx.conf"]
